@@ -1,15 +1,15 @@
 const r4os = @import("r4os");
 
 comptime {
-    asm (r4os.r4dev.protocolEntriesAsm("baddep_init", "baddep_shutdown", "baddep_query", "baddep_dispatch"));
+    if (!@import("builtin").is_test) asm (r4os.technical2.protocolEntriesAsm("baddep_init", "baddep_shutdown", "baddep_query", "baddep_dispatch"));
 }
 
-export fn baddep_init(api: *const r4os.r4dev.ProtocolApi) callconv(.c) i32 {
-    var ctx = r4os.r4dev.ProtocolContext.init(api);
-    ctx.logInfo("BADDEP.R4P init should stay blocked");
-    _ = ctx.registerRole("misc.baddep", .misc, 0);
-    _ = ctx.setStatus(.active, "bad dependency protocol unexpectedly active");
-    return 0;
+export fn baddep_init(api: *const r4os.r4dev.ProtocolApi2) callconv(.c) i32 {
+    const ctx = r4os.r4dev.ProtocolContext2.init(api);
+    if (!ctx.requires(.{ "register_role", "set_status" })) return r4os.abi.err_no_fn;
+    const registered = ctx.registerRole("misc.baddep", .misc, 0);
+    if (registered != 0) return registered;
+    return ctx.setStatus(.active, "bad dependency protocol unexpectedly active");
 }
 
 export fn baddep_shutdown() callconv(.c) i32 {
